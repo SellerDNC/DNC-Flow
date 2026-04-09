@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNC Digital Flow</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --sb:#0f1923;--sb2:#141f2e;--main:#111827;--card:#1a2235;--card2:#212d42;
+  --border:rgba(16,217,196,.1);--border2:rgba(16,217,196,.2);
+  --accent:#10d9c4;--accent2:#0fb8a6;--accent-dim:rgba(16,217,196,.08);
+  --text:#e2e8f0;--muted:#7a8fa6;--muted2:#4a5f72;
+  --red:#f56565;--red-dim:rgba(245,101,101,.1);
+  --green:#48bb78;--green-dim:rgba(72,187,120,.1);
+  --yellow:#f6ad55;--yellow-dim:rgba(246,173,85,.1);
+  --blue:#4f8ef7;
+  --font:'Inter',sans-serif;
+}
+body{font-family:var(--font);background:var(--main);color:var(--text);display:flex;min-height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sb{width:230px;min-width:230px;background:var(--sb);display:flex;flex-direction:column;border-right:1px solid var(--border);height:100vh;overflow-y:auto;flex-shrink:0}
+.sb-logo{padding:18px 16px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sb-logo-icon{width:34px;height:34px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#0f1923;flex-shrink:0}
+.sb-logo-wrap{flex:1}
+.sb-logo-title{font-size:14px;font-weight:700;color:var(--text);letter-spacing:-.2px}
+.sb-logo-sub{font-size:10px;color:var(--muted2);margin-top:1px}
+.sb-section{padding:18px 14px 5px;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--muted2);text-transform:uppercase}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 10px;margin:1px 8px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);transition:all .15s}
+.sb-item:hover{background:var(--card);color:var(--text)}
+.sb-item.active{background:var(--accent-dim);color:var(--accent);border:1px solid var(--border2)}
+.sb-item .icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.sb-item .badge-count{margin-left:auto;background:var(--accent);color:#0f1923;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center}
+.sb-divider{height:1px;background:var(--border);margin:8px 14px}
+.sb-bottom{margin-top:auto;padding:14px;border-top:1px solid var(--border)}
+.sb-user{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:10px;background:var(--card)}
+.sb-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0f1923;flex-shrink:0}
+.sb-uname{font-size:12px;font-weight:600;color:var(--text)}
+.sb-urole{font-size:10px;color:var(--muted2)}
+.sb-status{display:flex;align-items:center;gap:5px;margin-top:8px;padding:5px 10px;border-radius:8px;background:var(--accent-dim)}
+.sb-status-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+.sb-status-text{font-size:10px;color:var(--accent);font-weight:500}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* MAIN */
+.main-wrap{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:13px 24px;border-bottom:1px solid var(--border);background:var(--sb);flex-shrink:0}
+.topbar-left{display:flex;flex-direction:column}
+.topbar-title{font-size:16px;font-weight:700;letter-spacing:-.3px}
+.topbar-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.btn{font-family:var(--font);font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-primary{background:var(--accent);color:#0f1923}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-ghost{background:var(--card);color:var(--text);border:1px solid var(--border2)}
+.btn-ghost:hover{background:var(--card2)}
+.btn-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(245,101,101,.2)}
+.btn-sm{padding:5px 10px;font-size:11px}
+.content{flex:1;overflow-y:auto;padding:22px 24px}
+
+/* METRICS */
+.grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:18px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:18px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;margin-bottom:18px}
+.grid-32{display:grid;grid-template-columns:3fr 2fr;gap:13px;margin-bottom:18px}
+.metric{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden;transition:all .2s}
+.metric:hover{border-color:var(--border2);transform:translateY(-1px)}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);border-radius:2px 2px 0 0}
+.metric.red::before{background:var(--red)}
+.metric.yellow::before{background:var(--yellow)}
+.metric.green::before{background:var(--green)}
+.metric-label{font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:500}
+.metric-val{font-size:26px;font-weight:700;letter-spacing:-1px;line-height:1}
+.metric-sub{font-size:11px;color:var(--muted);margin-top:5px}
+.metric-pos{color:var(--green)}
+.metric-neg{color:var(--red)}
+.metric-warn{color:var(--yellow)}
+
+/* PANEL */
+.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px}
+.panel-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.panel-badge{font-size:10px;background:var(--accent-dim);color:var(--accent);padding:3px 8px;border-radius:20px;font-weight:600;letter-spacing:0;text-transform:none}
+
+/* ALERTS */
+.alert{display:flex;gap:10px;padding:10px 14px;border-radius:10px;font-size:12px;margin-bottom:8px;align-items:flex-start;line-height:1.5}
+.alert-red{background:var(--red-dim);border:1px solid rgba(245,101,101,.2);color:#fca5a5}
+.alert-yellow{background:var(--yellow-dim);border:1px solid rgba(246,173,85,.2);color:#fcd34d}
+.alert-green{background:var(--green-dim);border:1px solid rgba(72,187,120,.2);color:#86efac}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.badge-alta{background:rgba(245,101,101,.15);color:var(--red)}
+.badge-media{background:rgba(246,173,85,.15);color:var(--yellow)}
+.badge-baixa{background:rgba(72,187,120,.15);color:var(--green)}
+.badge-pendente{background:rgba(246,173,85,.15);color:var(--yellow)}
+.badge-andamento{background:rgba(16,217,196,.15);color:var(--accent)}
+.badge-concluido{background:rgba(72,187,120,.15);color:var(--green)}
+.badge-pago{background:rgba(72,187,120,.15);color:var(--green)}
+.badge-vencida{background:rgba(245,101,101,.15);color:var(--red)}
+.badge-dnc{background:rgba(16,217,196,.1);color:var(--accent)}
+
+/* TABS */
+.tabs{display:flex;gap:3px;margin-bottom:18px;background:var(--card);padding:4px;border-radius:10px;width:fit-content;border:1px solid var(--border)}
+.tab{padding:6px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;border:none;background:none;font-family:var(--font)}
+.tab.active{background:var(--accent);color:#0f1923}
+.tab:hover:not(.active){color:var(--text)}
+
+/* KANBAN */
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;align-items:start}
+.k-col{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+.k-col-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.k-col-title{font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
+.k-col-dot{width:8px;height:8px;border-radius:50%}
+.k-col-cnt{background:var(--card2);padding:2px 7px;border-radius:20px;font-size:10px;color:var(--muted)}
+.k-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 13px;margin-bottom:8px;transition:all .15s;cursor:default}
+.k-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.k-card-title{font-size:13px;font-weight:500;margin-bottom:8px;line-height:1.4}
+.k-card-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.k-card-actions{display:flex;gap:5px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.k-card-actions button{flex:1;font-family:var(--font);font-size:10px;font-weight:600;padding:4px 6px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
+.k-card-actions button:hover{background:var(--accent-dim);color:var(--accent);border-color:var(--accent)}
+.k-add{width:100%;padding:8px;border-radius:8px;border:1px dashed var(--border2);background:transparent;color:var(--muted);font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s;margin-top:4px}
+.k-add:hover{border-color:var(--accent);color:var(--accent)}
+
+/* TABLE */
+.table{width:100%;border-collapse:collapse}
+.table th{font-size:10px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px;padding:8px 12px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+.table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.table tr:last-child td{border-bottom:none}
+.table tr:hover td{background:rgba(16,217,196,.02)}
+
+/* CALENDAR */
+.cal-nav{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.cal-month{font-size:15px;font-weight:700;flex:1;text-align:center}
+.cal-nav-btn{background:var(--card);border:1px solid var(--border);color:var(--text);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.cal-nav-btn:hover{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-day-name{text-align:center;font-size:10px;font-weight:600;color:var(--muted2);padding:6px 0;text-transform:uppercase}
+.cal-cell{min-height:78px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;transition:all .15s;cursor:pointer}
+.cal-cell:hover{border-color:var(--border2)}
+.cal-cell.today{border-color:var(--accent);background:var(--accent-dim)}
+.cal-cell.other-month{opacity:.3}
+.cal-num{font-size:11px;font-weight:600;margin-bottom:3px}
+.cal-cell.today .cal-num{color:var(--accent)}
+.cal-event{font-size:9px;padding:1px 5px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.cal-event.task{background:rgba(16,217,196,.15);color:var(--accent)}
+.cal-event.conta{background:rgba(245,101,101,.15);color:var(--red)}
+
+/* PROCESSOS */
+.proc-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:12px;transition:all .2s}
+.proc-card:hover{border-color:var(--border2)}
+.proc-card.mercadox{border-color:rgba(16,217,196,.3);background:rgba(16,217,196,.03)}
+.proc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.proc-title-row{display:flex;align-items:center;gap:10px}
+.proc-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.proc-name{font-size:14px;font-weight:600}
+.proc-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.proc-progress{height:6px;background:var(--card2);border-radius:3px;overflow:hidden;margin:10px 0}
+.proc-bar{height:100%;background:var(--accent);border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.proc-steps{margin-top:10px}
+.proc-step{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:all .15s}
+.proc-step:last-child{border-bottom:none}
+.proc-step:hover{opacity:.85}
+.proc-check{width:18px;height:18px;border-radius:5px;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all .15s}
+.proc-check.done{background:var(--accent);border-color:var(--accent)}
+.proc-step-text{font-size:13px;line-height:1.5}
+.proc-step.done .proc-step-text{text-decoration:line-through;color:var(--muted)}
+
+/* FINANCEIRO */
+.fin-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.fin-row:last-child{border-bottom:none}
+.fin-left{display:flex;flex-direction:column;gap:3px}
+.fin-desc{font-size:13px;font-weight:500}
+.fin-meta{font-size:11px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.fin-right{text-align:right}
+.fin-val{font-size:14px;font-weight:600;font-family:'DM Mono','Courier New',monospace}
+.fin-actions{display:flex;gap:5px;margin-top:4px;justify-content:flex-end}
+
+/* ML DASHBOARD */
+.ml-upload{border:2px dashed var(--border2);border-radius:14px;padding:40px;text-align:center;cursor:pointer;transition:all .3s}
+.ml-upload:hover,.ml-upload.drag{border-color:var(--accent);background:var(--accent-dim)}
+.ml-upload-title{font-size:15px;font-weight:600;margin-bottom:6px}
+.ml-upload-sub{font-size:12px;color:var(--muted)}
+.ml-kpi{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.ml-kpi-label{font-size:10px;color:var(--muted);margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.ml-kpi-val{font-size:22px;font-weight:700;letter-spacing:-1px}
+.ml-kpi-sub{font-size:10px;color:var(--muted);margin-top:4px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bar-label{font-size:11px;color:var(--muted);width:100px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;background:rgba(255,255,255,.05);border-radius:3px;height:6px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;background:var(--accent);transition:width 1s cubic-bezier(.4,0,.2,1)}
+.bar-val{font-size:11px;color:var(--text);width:65px;text-align:right;font-family:'DM Mono','Courier New',monospace;flex-shrink:0}
+.prod-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.prod-row:last-child{border-bottom:none}
+.prod-num{font-size:11px;color:var(--muted2);width:16px;text-align:center}
+.prod-name{font-size:12px;flex:1;line-height:1.4}
+.prod-val{font-size:12px;font-family:'DM Mono','Courier New',monospace;white-space:nowrap}
+.chart-wrap{position:relative;width:100%}
+
+/* IA CHAT */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 180px)}
+.chat-messages{flex:1;overflow-y:auto;padding:4px 0;display:flex;flex-direction:column;gap:12px}
+.chat-msg{display:flex;gap:10px;align-items:flex-start}
+.chat-msg.user{flex-direction:row-reverse}
+.chat-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px}
+.chat-avatar.ai{background:var(--accent);color:#0f1923}
+.chat-avatar.user{background:var(--card2);color:var(--text)}
+.chat-bubble{max-width:78%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6}
+.chat-msg.ai .chat-bubble{background:var(--card);border:1px solid var(--border)}
+.chat-msg.user .chat-bubble{background:var(--accent);color:#0f1923}
+.chat-shortcuts{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.shortcut{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;background:var(--card);border:1px solid var(--border2);color:var(--muted);transition:all .15s}
+.shortcut:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.chat-input-row{display:flex;gap:8px;margin-top:12px}
+.chat-input{flex:1;background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;resize:none}
+.chat-input:focus{border-color:var(--accent)}
+.chat-send{background:var(--accent);border:none;color:#0f1923;width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;align-self:flex-end}
+.chat-send:hover{background:var(--accent2)}
+.typing{display:flex;gap:4px;align-items:center;padding:10px 14px}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bounce .8s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:26px 28px;width:480px;max-width:90vw;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:20px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;transition:border-color .15s}
+.field input:focus,.field select,.field textarea:focus{border-color:var(--accent)}
+.field select{cursor:pointer}
+.field textarea{resize:vertical;min-height:70px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.btn-cancel-m{font-family:var(--font);font-size:13px;padding:8px 18px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer}
+.btn-save-m{font-family:var(--font);font-size:13px;font-weight:700;padding:8px 18px;border-radius:8px;border:none;background:var(--accent);color:#0f1923;cursor:pointer}
+
+/* SCROLL */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+
+/* RESPONSIVE */
+@media(max-width:900px){.sb{display:none}.grid-4{grid-template-columns:1fr 1fr}.kanban{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sb">
+  <div class="sb-logo">
+    <div class="sb-logo-icon">DNC</div>
+    <div class="sb-logo-wrap">
+      <div class="sb-logo-title">DNC Digital Flow</div>
+      <div class="sb-logo-sub">Digital Store Manager</div>
+    </div>
+  </div>
+  <div class="sb-section">Principal</div>
+  <div class="sb-item active" onclick="nav('dashboard')"><span class="icon">⊞</span> Dashboard</div>
+  <div class="sb-item" onclick="nav('tarefas')"><span class="icon">✓</span> Tarefas <span class="badge-count" id="sb-tasks-cnt">0</span></div>
+  <div class="sb-item" onclick="nav('calendario')"><span class="icon">◫</span> Calendário</div>
+  <div class="sb-section">Gestão</div>
+  <div class="sb-item" onclick="nav('financeiro')"><span class="icon">$</span> Financeiro <span class="badge-count" id="sb-fin-cnt" style="background:var(--red)">0</span></div>
+  <div class="sb-item" onclick="nav('processos')"><span class="icon">⟳</span> Processos</div>
+  <div class="sb-item" onclick="nav('mercadox')"><span class="icon">📊</span> MercadoX</div>
+  <div class="sb-section">Ferramentas</div>
+  <div class="sb-item" onclick="nav('ia')"><span class="icon">✦</span> IA Assistente</div>
+  <div class="sb-divider"></div>
+  <div class="sb-bottom">
+    <div class="sb-status"><div class="sb-status-dot"></div><span class="sb-status-text" id="sb-status-text">Dados salvos</span></div>
+    <div class="sb-user" style="margin-top:8px;">
+      <div class="sb-avatar">AG</div>
+      <div><div class="sb-uname">André Godoy</div><div class="sb-urole">DNC Digital Store</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-wrap">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-sub" id="page-sub">Visão geral da DNC Digital Store</div>
+    </div>
+    <div class="topbar-right" id="topbar-actions"></div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-bg" id="modal-task"><div class="modal">
+  <div class="modal-title" id="mt-title">Nova Tarefa</div>
+  <div class="modal-sub">DNC Digital Store</div>
+  <div class="field"><label>Título *</label><input id="f-task-title" placeholder="Ex: Revisar anúncios ativos"></div>
+  <div class="field"><label>Prioridade</label><select id="f-task-prio"><option value="Alta">Alta</option><option value="Média" selected>Média</option><option value="Baixa">Baixa</option></select></div>
+  <div class="field"><label>Status</label><select id="f-task-status"><option value="A fazer">A fazer</option><option value="Em andamento">Em andamento</option><option value="Concluído">Concluído</option></select></div>
+  <div class="field"><label>Prazo</label><input type="date" id="f-task-date"></div>
+  <div class="field"><label>Descrição</label><textarea id="f-task-desc" placeholder="Detalhes da tarefa..."></textarea></div>
+  <div class="modal-actions">
+    <button class="btn-cancel-m" onclick="closeModal('modal-task')">Cancelar</button>
+    <button class="btn-save-m" onclick="saveTask()">Salvar</button>
+  </div>
+</div></div>
+
+<div class="modal-bg" id="modal-conta"><div class="modal">
+  <div class="modal-title" id="mc-title">Nova Conta</div>
+  <div class="modal-sub">DNC Digital Store</div>
+  <div class="field"><label>Descrição *</label><input id="f-conta-desc" placeholder="Ex: Fornecedor embalagens"></div>
+  <div class="field"><label>Valor (R$) *</label><input type="number" id="f-conta-val" placeholder="0.00" step="0.01"></div>
+  <div class="field"><label>Vencimento *</label><input type="date" id="f-conta-date"></div>
+  <div class="field"><label>Recorrência</label><select id="f-conta-rec"><option value="unica">Única</option><option value="mensal">Mensal</option></select></div>
+  <div class="modal-actions">
+    <button class="btn-cancel-m" onclick="closeModal('modal-conta')">Cancelar</button>
+    <button class="btn-save-m" onclick="saveConta()">Salvar</button>
+  </div>
+</div></div>
+
+<div class="modal-bg" id="modal-proc"><div class="modal">
+  <div class="modal-title">Novo Processo</div>
+  <div class="modal-sub">Criar checklist recorrente</div>
+  <div class="field"><label>Nome do Processo *</label><input id="f-proc-name" placeholder="Ex: Revisão semanal de anúncios"></div>
+  <div class="field"><label>Ícone (emoji)</label><input id="f-proc-icon" placeholder="📋" maxlength="2" style="width:60px"></div>
+  <div class="field"><label>Etapas (uma por linha) *</label><textarea id="f-proc-steps" placeholder="Verificar estoque&#10;Atualizar preços&#10;Responder perguntas" style="min-height:100px"></textarea></div>
+  <div class="modal-actions">
+    <button class="btn-cancel-m" onclick="closeModal('modal-proc')">Cancelar</button>
+    <button class="btn-save-m" onclick="saveProc()">Criar</button>
+  </div>
+</div></div>
+
+<input type="file" id="ml-file-input" accept=".xlsx,.xls" style="display:none" onchange="handleMLFile(event)">
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let tasks = [], contas = [], procs = [], mlData = null;
+let currentPage = 'dashboard';
+let editingTaskId = null, editingContaId = null;
+let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
+let chartRefs = {};
+let kanbanView = 'kanban', listFilter = 'Todas', finFilter = 'Todas';
+
+// ─── STORAGE ─────────────────────────────────────────────────────────────────
+const useClaudeStorage = typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function';
+
+async function storageGet(key) {
+  if (useClaudeStorage) {
+    try { const r = await window.storage.get(key); return r ? r.value : null; } catch(e) { return null; }
+  }
+  return localStorage.getItem(key);
+}
+
+async function storageSet(key, value) {
+  if (useClaudeStorage) {
+    try { await window.storage.set(key, value); } catch(e) {}
+  } else {
+    try { localStorage.setItem(key, value); } catch(e) {}
+  }
+}
+
+async function load() {
+  try {
+    const [t, c, p] = await Promise.all([
+      storageGet('dnc-tasks-v1'),
+      storageGet('dnc-contas-v1'),
+      storageGet('dnc-procs-v1')
+    ]);
+    tasks = t ? JSON.parse(t) : defaultTasks();
+    contas = c ? JSON.parse(c) : defaultContas();
+    procs = p ? JSON.parse(p) : defaultProcs();
+  } catch(e) {
+    tasks = defaultTasks(); contas = defaultContas(); procs = defaultProcs();
+  }
+  updateSidebar(); render();
+}
+
+async function save() {
+  try {
+    await Promise.all([
+      storageSet('dnc-tasks-v1', JSON.stringify(tasks)),
+      storageSet('dnc-contas-v1', JSON.stringify(contas)),
+      storageSet('dnc-procs-v1', JSON.stringify(procs))
+    ]);
+    setSbStatus('Dados salvos');
+  } catch(e) { setSbStatus('Erro ao salvar'); }
+}
+
+function setSbStatus(t) {
+  const el = document.getElementById('sb-status-text');
+  if(el) el.textContent = t;
+  setTimeout(() => { if(el) el.textContent = 'Dados salvos'; }, 2500);
+}
+
+// ─── DEFAULTS ────────────────────────────────────────────────────────────────
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function defaultTasks() {
+  return [
+    {id:uid(),title:'Revisar anúncios ativos no ML',prio:'Alta',status:'A fazer',date:'',desc:'Verificar preços e posicionamento'},
+    {id:uid(),title:'Atualizar fotos dos produtos',prio:'Média',status:'A fazer',date:'',desc:''},
+    {id:uid(),title:'Responder perguntas pendentes',prio:'Alta',status:'Em andamento',date:'',desc:''},
+    {id:uid(),title:'Analisar relatório de vendas',prio:'Média',status:'Em andamento',date:'',desc:'Usar planilha DNC'},
+    {id:uid(),title:'Negociar frete com transportadora',prio:'Baixa',status:'Concluído',date:'',desc:''},
+  ];
+}
+
+function defaultContas() {
+  const hoje = new Date();
+  const fmt = (d) => d.toISOString().split('T')[0];
+  const add = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+  return [
+    {id:uid(),desc:'Plataforma ML — mensalidade',val:299,date:fmt(add(hoje,2)),rec:'mensal',pago:false},
+    {id:uid(),desc:'Embalagens e materiais',val:850,date:fmt(add(hoje,8)),rec:'mensal',pago:false},
+    {id:uid(),desc:'Anúncios patrocinados',val:500,date:fmt(add(hoje,-3)),rec:'mensal',pago:false},
+    {id:uid(),desc:'Fulfillment — armazenagem',val:320,date:fmt(add(hoje,15)),rec:'mensal',pago:false},
+  ];
+}
+
+function defaultProcs() {
+  return [
+    {id:uid(),name:'Rotina DNC Semanal',icon:'📅',steps:[
+      {id:uid(),text:'Verificar pedidos pendentes e envios',done:false},
+      {id:uid(),text:'Responder perguntas no ML',done:false},
+      {id:uid(),text:'Analisar métricas da semana',done:false},
+      {id:uid(),text:'Atualizar estoque de produtos',done:false},
+      {id:uid(),text:'Revisar anúncios com queda de vendas',done:false},
+    ]},
+    {id:uid(),name:'Fechamento Mensal DNC',icon:'📊',steps:[
+      {id:uid(),text:'Exportar relatório de vendas do ML',done:false},
+      {id:uid(),text:'Calcular faturamento e repasses',done:false},
+      {id:uid(),text:'Pagar contas do mês',done:false},
+      {id:uid(),text:'Revisar curva ABC de produtos',done:false},
+      {id:uid(),text:'Planejar estoque para próximo mês',done:false},
+      {id:uid(),text:'Registrar resultado no financeiro',done:false},
+    ]},
+    {id:uid(),name:'MercadoX — Análise de Produto',icon:'🔍',steps:[
+      {id:uid(),text:'Pesquisar produto na API pública do ML',done:false},
+      {id:uid(),text:'Analisar demanda e volume de vendas',done:false},
+      {id:uid(),text:'Verificar concorrência e guerra de preços',done:false},
+      {id:uid(),text:'Calcular margem e ticket médio',done:false},
+      {id:uid(),text:'Avaliar curva ABC do nicho',done:false},
+      {id:uid(),text:'Decisão: investir / não investir',done:false},
+    ]},
+    {id:uid(),name:'Lançamento de Novo Produto',icon:'🚀',steps:[
+      {id:uid(),text:'Pesquisar fornecedores e custo',done:false},
+      {id:uid(),text:'Criar anúncio com fotos e descrição',done:false},
+      {id:uid(),text:'Configurar preço e frete',done:false},
+      {id:uid(),text:'Definir estoque inicial',done:false},
+      {id:uid(),text:'Ativar anúncio e monitorar primeiros dias',done:false},
+    ]},
+  ];
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+const pages = {
+  dashboard: {title:'Dashboard', sub:'Visão geral da DNC Digital Store'},
+  tarefas: {title:'Tarefas', sub:'Kanban e lista de tarefas'},
+  calendario: {title:'Calendário', sub:'Tarefas e contas no tempo'},
+  financeiro: {title:'Financeiro', sub:'Contas a pagar da DNC'},
+  processos: {title:'Processos', sub:'Checklists e rotinas recorrentes'},
+  mercadox: {title:'MercadoX', sub:'Dashboard Mercado Livre · importar planilha ou API'},
+  ia: {title:'IA Assistente', sub:'Chat com Claude · contexto DNC em tempo real'},
+};
+
+function nav(page) {
+  currentPage = page;
+  document.querySelectorAll('.sb-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.sb-item[onclick="nav('${page}')"]`)?.classList.add('active');
+  document.getElementById('page-title').textContent = pages[page].title;
+  document.getElementById('page-sub').textContent = pages[page].sub;
+  destroyCharts(); render();
+}
+
+function destroyCharts() {
+  Object.values(chartRefs).forEach(c => { try{c.destroy()}catch(e){} });
+  chartRefs = {};
+}
+
+function render() {
+  const actions = document.getElementById('topbar-actions');
+  const content = document.getElementById('content');
+  actions.innerHTML = '';
+  if(currentPage === 'dashboard') renderDashboard(content, actions);
+  else if(currentPage === 'tarefas') renderTarefas(content, actions);
+  else if(currentPage === 'calendario') renderCalendario(content, actions);
+  else if(currentPage === 'financeiro') renderFinanceiro(content, actions);
+  else if(currentPage === 'processos') renderProcessos(content, actions);
+  else if(currentPage === 'mercadox') renderMercadoX(content, actions);
+  else if(currentPage === 'ia') renderIA(content, actions);
+}
+
+function updateSidebar() {
+  const pending = tasks.filter(t => t.status !== 'Concluído').length;
+  const el = document.getElementById('sb-tasks-cnt');
+  if(el) el.textContent = pending;
+  const venc = contasVencidas().length + contasVencendo(3).length;
+  const el2 = document.getElementById('sb-fin-cnt');
+  if(el2) { el2.textContent = venc; el2.style.display = venc > 0 ? '' : 'none'; }
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function fmt(n) { return 'R$ ' + Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtK(n) { return n >= 1000 ? 'R$ ' + (n/1000).toFixed(1) + 'K' : fmt(n); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function fmtDate(d) { if(!d) return '—'; const p = d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+function daysUntil(d) { if(!d) return 999; return Math.ceil((new Date(d) - new Date(today()))/(1000*60*60*24)); }
+function contasVencidas() { return contas.filter(c => !c.pago && c.date && daysUntil(c.date) < 0); }
+function contasVencendo(n) { return contas.filter(c => !c.pago && c.date && daysUntil(c.date) >= 0 && daysUntil(c.date) <= n); }
+function tasksByStatus(s) { return tasks.filter(t => t.status === s); }
+function pctComplete() { return tasks.length ? Math.round(tasksByStatus('Concluído').length/tasks.length*100) : 0; }
+
+function badgeArea(a) { return `<span class="badge badge-dnc">${a||'DNC'}</span>`; }
+function badgePrio(p) { const m = {Alta:'alta',Média:'media','M\u00e9dia':'media',Baixa:'baixa'}; return `<span class="badge badge-${m[p]||'media'}">${p}</span>`; }
+function badgeStatus(s) { const m = {'A fazer':'pendente','Em andamento':'andamento','Concluído':'concluido'}; return `<span class="badge badge-${m[s]||'pendente'}">${s}</span>`; }
+
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+function renderDashboard(el, acts) {
+  acts.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="nav('tarefas')">Ver tarefas</button><button class="btn btn-primary btn-sm" onclick="openModal('modal-task')">+ Tarefa</button>`;
+  const vencidas = contasVencidas(), vencendo = contasVencendo(3);
+  const atrasadas = tasks.filter(t => t.status !== 'Concluído' && t.date && t.date < today());
+  const totalPendente = contas.filter(c=>!c.pago).reduce((s,c)=>s+c.val,0);
+
+  let alerts = '';
+  if(vencidas.length) alerts += `<div class="alert alert-red">🔴 <div><strong>${vencidas.length} conta${vencidas.length>1?'s':''} vencida${vencidas.length>1?'s':''}:</strong> ${vencidas.map(c=>c.desc).join(', ')}</div></div>`;
+  if(vencendo.length) alerts += `<div class="alert alert-yellow">⚠️ <div><strong>${vencendo.length} conta${vencendo.length>1?'s':''} vencendo em 3 dias:</strong> ${vencendo.map(c=>c.desc).join(', ')}</div></div>`;
+  if(atrasadas.length) alerts += `<div class="alert alert-yellow">📌 <div><strong>${atrasadas.length} tarefa${atrasadas.length>1?'s':''} atrasada${atrasadas.length>1?'s':''}.</strong></div></div>`;
+
+  const hoje = tasks.filter(t => t.date === today() && t.status !== 'Concluído');
+  const urgentes = contas.filter(c => !c.pago && c.date && daysUntil(c.date) <= 7).sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  el.innerHTML = `
+    ${alerts || ''}
+    <div class="grid-4">
+      <div class="metric m-accent">
+        <div class="metric-label">Progresso geral</div>
+        <div class="metric-val">${pctComplete()}%</div>
+        <div class="metric-sub">${tasksByStatus('Concluído').length} de ${tasks.length} tarefas</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Em andamento</div>
+        <div class="metric-val">${tasksByStatus('Em andamento').length}</div>
+        <div class="metric-sub">tarefas ativas</div>
+      </div>
+      <div class="metric ${vencidas.length ? 'red' : ''}">
+        <div class="metric-label">Alta prioridade</div>
+        <div class="metric-val">${tasks.filter(t=>t.prio==='Alta'&&t.status!=='Concluído').length}</div>
+        <div class="metric-sub">tarefas urgentes</div>
+      </div>
+      <div class="metric ${totalPendente > 0 ? 'yellow' : ''}">
+        <div class="metric-label">Contas pendentes</div>
+        <div class="metric-val metric-warn">${fmt(totalPendente)}</div>
+        <div class="metric-sub">${contas.filter(c=>!c.pago).length} contas</div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">Tarefas de hoje <span class="panel-badge">${hoje.length} pendentes</span></div>
+        ${hoje.length ? hoje.map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="flex:1">${t.title}</span>${badgePrio(t.prio)}</div>`).join('') : '<div style="font-size:12px;color:var(--muted);padding:12px 0;text-align:center">Nenhuma tarefa para hoje</div>'}
+      </div>
+      <div class="panel">
+        <div class="panel-title">Contas urgentes <span class="panel-badge">7 dias</span></div>
+        ${urgentes.length ? urgentes.slice(0,5).map(c=>`<div class="fin-row"><div class="fin-left"><div class="fin-desc">${c.desc}</div><div class="fin-meta"><span>${fmtDate(c.date)}</span></div></div><div class="fin-right"><div class="fin-val ${daysUntil(c.date)<0?'metric-neg':daysUntil(c.date)<=3?'metric-warn':''}">${fmt(c.val)}</div></div></div>`).join('') : '<div style="font-size:12px;color:var(--muted);padding:12px 0;text-align:center">Nenhuma conta urgente</div>'}
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">Status das tarefas</div>
+        <div class="chart-wrap" style="height:160px;"><canvas id="chart-donut" role="img" aria-label="Status tarefas"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Por prioridade</div>
+        <div class="chart-wrap" style="height:160px;"><canvas id="chart-prio" role="img" aria-label="Por prioridade"></canvas></div>
+      </div>
+    </div>`;
+
+  setTimeout(() => {
+    const s = tasks.filter(t=>t.status!=='Concluído');
+    chartRefs.donut = new Chart(document.getElementById('chart-donut'), {
+      type:'doughnut',
+      data:{labels:['A fazer','Em andamento','Concluído'],datasets:[{data:[tasksByStatus('A fazer').length,tasksByStatus('Em andamento').length,tasksByStatus('Concluído').length],backgroundColor:['#f6ad55','#10d9c4','#48bb78'],borderWidth:0,hoverOffset:4}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:10,padding:8,color:'#7a8fa6'}}}}
+    });
+    chartRefs.prio = new Chart(document.getElementById('chart-prio'), {
+      type:'bar',
+      data:{labels:['Alta','Média','Baixa'],datasets:[{data:[tasks.filter(t=>t.prio==='Alta').length,tasks.filter(t=>t.prio==='Média').length,tasks.filter(t=>t.prio==='Baixa').length],backgroundColor:['#f56565','#f6ad55','#48bb78'],borderRadius:6,borderSkipped:false}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7a8fa6',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#7a8fa6',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'}}}}
+    });
+  }, 50);
+}
+
+// ─── TAREFAS ──────────────────────────────────────────────────────────────────
+function renderTarefas(el, acts) {
+  acts.innerHTML = `
+    <div class="tabs" style="margin:0">
+      <button class="tab ${kanbanView==='kanban'?'active':''}" onclick="kanbanView='kanban';renderTarefas(document.getElementById('content'),document.getElementById('topbar-actions'))">Kanban</button>
+      <button class="tab ${kanbanView==='lista'?'active':''}" onclick="kanbanView='lista';renderTarefas(document.getElementById('content'),document.getElementById('topbar-actions'))">Lista</button>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('modal-task')">+ Tarefa</button>`;
+
+  if(kanbanView === 'kanban') {
+    const cols = ['A fazer','Em andamento','Concluído'];
+    const colColors = {'A fazer':'#f6ad55','Em andamento':'#10d9c4','Concluído':'#48bb78'};
+    el.innerHTML = `<div class="kanban">${cols.map(col => `
+      <div class="k-col">
+        <div class="k-col-hdr">
+          <div class="k-col-title"><div class="k-col-dot" style="background:${colColors[col]}"></div>${col}</div>
+          <span class="k-col-cnt">${tasksByStatus(col).length}</span>
+        </div>
+        ${tasksByStatus(col).map(t => `
+          <div class="k-card">
+            <div class="k-card-title">${t.title}</div>
+            <div class="k-card-meta">${badgePrio(t.prio)}${t.date?`<span style="font-size:10px;color:var(--muted)">${fmtDate(t.date)}</span>`:''}</div>
+            ${t.desc?`<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:6px">${t.desc}</div>`:''}
+            <div class="k-card-actions">
+              ${col !== 'A fazer' ? `<button onclick="moveTask('${t.id}',-1)">← Voltar</button>` : ''}
+              ${col !== 'Concluído' ? `<button onclick="moveTask('${t.id}',1)">Avançar →</button>` : ''}
+              <button onclick="editTask('${t.id}')">✏️</button>
+              <button onclick="deleteTask('${t.id}')" style="color:var(--red)">✕</button>
+            </div>
+          </div>`).join('')}
+        <button class="k-add" onclick="openTaskForCol('${col}')">+ Adicionar</button>
+      </div>`).join('')}</div>`;
+  } else {
+    const filtered = [...tasks].sort((a,b) => {
+      const pm = {Alta:0,Média:1,'M\u00e9dia':1,Baixa:2};
+      return (pm[a.prio]||1)-(pm[b.prio]||1);
+    });
+    el.innerHTML = `
+      <div class="panel" style="padding:0">
+        <table class="table">
+          <thead><tr><th>Título</th><th>Prioridade</th><th>Status</th><th>Prazo</th><th>Ações</th></tr></thead>
+          <tbody>${filtered.map(t=>`
+            <tr>
+              <td style="font-weight:500;max-width:260px">${t.title}${t.desc?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${t.desc}</div>`:''}</td>
+              <td>${badgePrio(t.prio)}</td>
+              <td>${badgeStatus(t.status)}</td>
+              <td style="font-size:12px;color:${t.date&&t.date<today()?'var(--red)':'var(--muted)'}">${fmtDate(t.date)}</td>
+              <td><div style="display:flex;gap:5px">
+                <button class="btn btn-ghost btn-sm" onclick="editTask('${t.id}')">✏️</button>
+                <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteTask('${t.id}')">✕</button>
+              </div></td>
+            </tr>`).join('')}</tbody>
+        </table>
+      </div>`;
+  }
+}
+
+function openTaskForCol(col) {
+  editingTaskId = null;
+  document.getElementById('mt-title').textContent = 'Nova Tarefa';
+  document.getElementById('f-task-title').value = '';
+  document.getElementById('f-task-prio').value = 'Média';
+  document.getElementById('f-task-status').value = col;
+  document.getElementById('f-task-date').value = '';
+  document.getElementById('f-task-desc').value = '';
+  document.getElementById('modal-task').classList.add('open');
+}
+
+function openModal(id) {
+  if(id === 'modal-task') {
+    editingTaskId = null;
+    document.getElementById('mt-title').textContent = 'Nova Tarefa';
+    document.getElementById('f-task-title').value='';
+    document.getElementById('f-task-prio').value='Média';
+    document.getElementById('f-task-status').value='A fazer';
+    document.getElementById('f-task-date').value='';
+    document.getElementById('f-task-desc').value='';
+  }
+  if(id === 'modal-conta') {
+    editingContaId = null;
+    document.getElementById('mc-title').textContent = 'Nova Conta';
+    document.getElementById('f-conta-desc').value='';
+    document.getElementById('f-conta-val').value='';
+    document.getElementById('f-conta-date').value='';
+    document.getElementById('f-conta-rec').value='unica';
+  }
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function saveTask() {
+  const title = document.getElementById('f-task-title').value.trim();
+  if(!title) return alert('Título obrigatório');
+  const t = {
+    id: editingTaskId || uid(),
+    title, prio: document.getElementById('f-task-prio').value,
+    status: document.getElementById('f-task-status').value,
+    date: document.getElementById('f-task-date').value,
+    desc: document.getElementById('f-task-desc').value.trim()
+  };
+  if(editingTaskId) { tasks = tasks.map(x => x.id===editingTaskId ? t : x); }
+  else tasks.push(t);
+  save(); updateSidebar(); closeModal('modal-task'); render();
+}
+
+function editTask(id) {
+  const t = tasks.find(x => x.id===id);
+  if(!t) return;
+  editingTaskId = id;
+  document.getElementById('mt-title').textContent = 'Editar Tarefa';
+  document.getElementById('f-task-title').value = t.title;
+  document.getElementById('f-task-prio').value = t.prio;
+  document.getElementById('f-task-status').value = t.status;
+  document.getElementById('f-task-date').value = t.date||'';
+  document.getElementById('f-task-desc').value = t.desc||'';
+  document.getElementById('modal-task').classList.add('open');
+}
+
+function deleteTask(id) {
+  if(!confirm('Apagar esta tarefa?')) return;
+  tasks = tasks.filter(t => t.id !== id);
+  save(); updateSidebar(); render();
+}
+
+function moveTask(id, dir) {
+  const order = ['A fazer','Em andamento','Concluído'];
+  const t = tasks.find(x => x.id===id);
+  if(!t) return;
+  const idx = order.indexOf(t.status);
+  const newIdx = idx + dir;
+  if(newIdx < 0 || newIdx >= order.length) return;
+  t.status = order[newIdx];
+  save(); updateSidebar(); render();
+}
+
+// ─── CALENDÁRIO ──────────────────────────────────────────────────────────────
+function renderCalendario(el, acts) {
+  acts.innerHTML = `
+    <button class="btn btn-ghost btn-sm" onclick="calMonth--;if(calMonth<0){calMonth=11;calYear--};renderCalendario(document.getElementById('content'),document.getElementById('topbar-actions'))">‹ Anterior</button>
+    <button class="btn btn-ghost btn-sm" onclick="calMonth++;if(calMonth>11){calMonth=0;calYear++};renderCalendario(document.getElementById('content'),document.getElementById('topbar-actions'))">Próximo ›</button>`;
+
+  const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const first = new Date(calYear, calMonth, 1).getDay();
+  const days = new Date(calYear, calMonth+1, 0).getDate();
+  const todayStr = today();
+
+  let cells = '';
+  for(let i=0;i<first;i++) cells += `<div class="cal-cell other-month"></div>`;
+  for(let d=1;d<=days;d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayTasks = tasks.filter(t => t.date===dateStr && t.status!=='Concluído');
+    const dayContas = contas.filter(c => c.date===dateStr && !c.pago);
+    cells += `<div class="cal-cell ${dateStr===todayStr?'today':''}">
+      <div class="cal-num">${d}</div>
+      ${dayTasks.slice(0,2).map(t=>`<div class="cal-event task">${t.title.substring(0,18)}</div>`).join('')}
+      ${dayContas.slice(0,1).map(c=>`<div class="cal-event conta">${c.desc.substring(0,18)}</div>`).join('')}
+    </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="panel">
+      <div class="cal-nav"><button class="cal-nav-btn" onclick="calMonth--;if(calMonth<0){calMonth=11;calYear--};renderCalendario(document.getElementById('content'),document.getElementById('topbar-actions'))">‹</button><div class="cal-month">${months[calMonth]} ${calYear}</div><button class="cal-nav-btn" onclick="calMonth++;if(calMonth>11){calMonth=0;calYear++};renderCalendario(document.getElementById('content'),document.getElementById('topbar-actions'))">›</button></div>
+      <div class="cal-grid">
+        ${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d=>`<div class="cal-day-name">${d}</div>`).join('')}
+        ${cells}
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:12px;font-size:12px;color:var(--muted);align-items:center">
+      <div style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(16,217,196,.3);display:inline-block"></span>Tarefa</div>
+      <div style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(245,101,101,.3);display:inline-block"></span>Conta</div>
+    </div>`;
+}
+
+// ─── FINANCEIRO ───────────────────────────────────────────────────────────────
+function renderFinanceiro(el, acts) {
+  acts.innerHTML = `
+    <div class="tabs" style="margin:0">
+      ${['Todas','Pendentes','Vencidas','Pagas'].map(f=>`<button class="tab ${finFilter===f?'active':''}" onclick="finFilter='${f}';renderFinanceiro(document.getElementById('content'),document.getElementById('topbar-actions'))">${f}</button>`).join('')}
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('modal-conta')">+ Conta</button>`;
+
+  const total = contas.filter(c=>!c.pago).reduce((s,c)=>s+c.val,0);
+  const venc3 = contasVencendo(3).reduce((s,c)=>s+c.val,0);
+  const vencidas = contasVencidas().reduce((s,c)=>s+c.val,0);
+
+  let filtered = [...contas];
+  if(finFilter==='Pendentes') filtered = contas.filter(c=>!c.pago&&daysUntil(c.date)>=0);
+  else if(finFilter==='Vencidas') filtered = contasVencidas();
+  else if(finFilter==='Pagas') filtered = contas.filter(c=>c.pago);
+  filtered.sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  el.innerHTML = `
+    <div class="grid-3">
+      <div class="metric yellow"><div class="metric-label">Total pendente</div><div class="metric-val metric-warn">${fmt(total)}</div><div class="metric-sub">${contas.filter(c=>!c.pago).length} contas</div></div>
+      <div class="metric yellow"><div class="metric-label">Vencendo em 3 dias</div><div class="metric-val metric-warn">${fmt(venc3)}</div><div class="metric-sub">${contasVencendo(3).length} contas</div></div>
+      <div class="metric red"><div class="metric-label">Vencidas</div><div class="metric-val metric-neg">${fmt(vencidas)}</div><div class="metric-sub">${contasVencidas().length} contas</div></div>
+    </div>
+    <div class="panel" style="padding:0">
+      <table class="table">
+        <thead><tr><th>Descrição</th><th>Valor</th><th>Vencimento</th><th>Recorrência</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody>${filtered.length ? filtered.map(c => {
+          const d = daysUntil(c.date);
+          const statusLabel = c.pago ? 'Pago' : d < 0 ? 'Vencida' : d <= 3 ? 'Urgente' : 'Pendente';
+          const statusClass = c.pago ? 'pago' : d < 0 ? 'vencida' : d <= 3 ? 'alta' : 'pendente';
+          return `<tr>
+            <td style="font-weight:500">${c.desc}</td>
+            <td style="font-family:'DM Mono','Courier New',monospace">${fmt(c.val)}</td>
+            <td style="color:${!c.pago&&d<0?'var(--red)':!c.pago&&d<=3?'var(--yellow)':'var(--muted)'};font-size:12px">${fmtDate(c.date)}</td>
+            <td><span style="font-size:11px;color:var(--muted)">${c.rec==='mensal'?'Mensal':'Única'}</span></td>
+            <td><span class="badge badge-${statusClass}">${statusLabel}</span></td>
+            <td><div style="display:flex;gap:5px">
+              ${!c.pago?`<button class="btn btn-ghost btn-sm" style="color:var(--green)" onclick="pagarConta('${c.id}')">✓ Pagar</button>`:''}
+              <button class="btn btn-ghost btn-sm" onclick="editConta('${c.id}')">✏️</button>
+              <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteConta('${c.id}')">✕</button>
+            </div></td>
+          </tr>`;}).join('') : `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Nenhuma conta nesta categoria</td></tr>`}</tbody>
+      </table>
+    </div>`;
+}
+
+function saveConta() {
+  const desc = document.getElementById('f-conta-desc').value.trim();
+  const val = parseFloat(document.getElementById('f-conta-val').value);
+  const date = document.getElementById('f-conta-date').value;
+  if(!desc || !val || !date) return alert('Preencha todos os campos obrigatórios');
+  const c = { id: editingContaId||uid(), desc, val, date, rec: document.getElementById('f-conta-rec').value, pago: false };
+  if(editingContaId) contas = contas.map(x => x.id===editingContaId ? c : x);
+  else contas.push(c);
+  save(); updateSidebar(); closeModal('modal-conta'); render();
+}
+
+function editConta(id) {
+  const c = contas.find(x=>x.id===id); if(!c) return;
+  editingContaId = id;
+  document.getElementById('mc-title').textContent = 'Editar Conta';
+  document.getElementById('f-conta-desc').value = c.desc;
+  document.getElementById('f-conta-val').value = c.val;
+  document.getElementById('f-conta-date').value = c.date;
+  document.getElementById('f-conta-rec').value = c.rec;
+  document.getElementById('modal-conta').classList.add('open');
+}
+
+function deleteConta(id) {
+  if(!confirm('Apagar esta conta?')) return;
+  contas = contas.filter(c => c.id !== id);
+  save(); updateSidebar(); render();
+}
+
+function pagarConta(id) {
+  const c = contas.find(x=>x.id===id); if(!c) return;
+  c.pago = true;
+  if(c.rec === 'mensal') {
+    const next = new Date(c.date); next.setMonth(next.getMonth()+1);
+    contas.push({id:uid(),desc:c.desc,val:c.val,date:next.toISOString().split('T')[0],rec:'mensal',pago:false});
+  }
+  save(); updateSidebar(); render();
+}
+
+// ─── PROCESSOS ────────────────────────────────────────────────────────────────
+function renderProcessos(el, acts) {
+  acts.innerHTML = `<button class="btn btn-primary btn-sm" onclick="openModal('modal-proc')">+ Processo</button>`;
+  el.innerHTML = procs.map(p => {
+    const done = p.steps.filter(s=>s.done).length;
+    const pct = p.steps.length ? Math.round(done/p.steps.length*100) : 0;
+    const isMX = p.name.toLowerCase().includes('mercadox') || p.name.toLowerCase().includes('mercado');
+    return `<div class="proc-card ${isMX?'mercadox':''}">
+      <div class="proc-header">
+        <div class="proc-title-row">
+          <div class="proc-icon" style="background:${isMX?'rgba(16,217,196,.15)':'var(--card2)'}">${p.icon||'📋'}</div>
+          <div>
+            <div class="proc-name">${p.name}</div>
+            <div class="proc-meta">${done}/${p.steps.length} etapas · ${pct}% concluído</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${pct===100?`<span class="badge badge-concluido">✓ Completo</span>`:''}
+          <button class="btn btn-ghost btn-sm" onclick="resetProc('${p.id}')">↺ Reiniciar</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteProc('${p.id}')">✕</button>
+        </div>
+      </div>
+      <div class="proc-progress"><div class="proc-bar" style="width:${pct}%"></div></div>
+      <div class="proc-steps">
+        ${p.steps.map(s=>`
+          <div class="proc-step ${s.done?'done':''}" onclick="toggleStep('${p.id}','${s.id}')">
+            <div class="proc-check ${s.done?'done':''}"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5l2.5 2.5L8 3" stroke="${s.done?'#0f1923':'transparent'}" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div>
+            <div class="proc-step-text">${s.text}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleStep(procId, stepId) {
+  const p = procs.find(x=>x.id===procId); if(!p) return;
+  const s = p.steps.find(x=>x.id===stepId); if(!s) return;
+  s.done = !s.done;
+  save(); render();
+}
+
+function resetProc(id) {
+  if(!confirm('Reiniciar todas as etapas?')) return;
+  const p = procs.find(x=>x.id===id); if(!p) return;
+  p.steps.forEach(s=>s.done=false);
+  save(); render();
+}
+
+function deleteProc(id) {
+  if(!confirm('Apagar este processo?')) return;
+  procs = procs.filter(p=>p.id!==id);
+  save(); render();
+}
+
+function saveProc() {
+  const name = document.getElementById('f-proc-name').value.trim();
+  const steps = document.getElementById('f-proc-steps').value.trim().split('\n').filter(s=>s.trim());
+  if(!name || !steps.length) return alert('Nome e etapas são obrigatórios');
+  procs.push({ id:uid(), name, icon:document.getElementById('f-proc-icon').value||'📋', steps:steps.map(s=>({id:uid(),text:s.trim(),done:false})) });
+  save(); closeModal('modal-proc'); render();
+}
+
+// ─── MERCADOX ─────────────────────────────────────────────────────────────────
+let mlCharts = {};
+function renderMercadoX(el, acts) {
+  acts.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="document.getElementById('ml-file-input').click()">↑ Importar planilha</button><button class="btn btn-primary btn-sm" onclick="openMLApiModal()">⚡ Conectar API</button>`;
+  if(!mlData) {
+    el.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:20px">
+        <div class="ml-upload" onclick="document.getElementById('ml-file-input').click()" id="ml-drop" ondragover="mlDragOver(event)" ondragleave="mlDragLeave()" ondrop="mlDrop(event)">
+          <div style="font-size:40px;margin-bottom:14px">📊</div>
+          <div class="ml-upload-title">Importe sua planilha DNC</div>
+          <div class="ml-upload-sub">Arraste o arquivo .xlsx ou clique para selecionar</div>
+          <div style="font-size:11px;color:var(--muted2);margin-top:14px">Compatible com Dashboard ML PRO 2.0 · Exportação padrão do Mercado Livre</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted2);text-align:center;line-height:1.8">
+          Quando a API estiver certificada, clique em <span style="color:var(--accent)">⚡ Conectar API</span> para dados ao vivo.<br>
+          Todos os dados são processados localmente no seu navegador.
+        </div>
+      </div>`;
+    return;
+  }
+  renderMLDashboard(el);
+}
+
+function mlDragOver(e) { e.preventDefault(); document.getElementById('ml-drop')?.classList.add('drag'); }
+function mlDragLeave() { document.getElementById('ml-drop')?.classList.remove('drag'); }
+function mlDrop(e) { e.preventDefault(); mlDragLeave(); if(e.dataTransfer.files[0]) processMLXLSX(e.dataTransfer.files[0]); }
+function handleMLFile(e) { if(e.target.files[0]) processMLXLSX(e.target.files[0]); }
+
+function processMLXLSX(file) {
+  setSbStatus('Processando planilha...');
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'binary', cellDates:true});
+      const orders = XLSX.utils.sheet_to_json(wb.Sheets['orders']||wb.Sheets[wb.SheetNames[0]], {defval:null});
+      const display = XLSX.utils.sheet_to_json(wb.Sheets['display']||wb.Sheets['Display']||{}, {defval:null, header:1});
+      const metaSheet = XLSX.utils.sheet_to_json(wb.Sheets['Meta']||wb.Sheets['meta']||{}, {defval:null, header:1});
+      mlData = { orders, display, meta: metaSheet, file: file.name, loaded: new Date().toLocaleString('pt-BR') };
+      setSbStatus('Planilha carregada ✓');
+      render();
+    } catch(err) { alert('Erro: '+err.message); setSbStatus('Erro ao processar'); }
+  };
+  reader.readAsBinaryString(file);
+}
+
+function renderMLDashboard(el) {
+  const { orders } = mlData;
+  const approved = orders.filter(o => (o['ORDER STATUS']||'').toLowerCase().includes('aprovado') || (o['ORDER STATUS']||'').toLowerCase().includes('approved'));
+  const totalFat = approved.reduce((s,o)=>s+(Number(o['ORDER TOTAL'])||0),0);
+  const totalRep = approved.reduce((s,o)=>s+(Number(o['NET REVENUE R'])||0),0);
+  const totalOrders = approved.length;
+  const ticket = totalOrders>0 ? totalFat/totalOrders : 0;
+
+  // Daily
+  const byDay = {};
+  approved.forEach(o => {
+    const d = o['DATE CLOSED'] ? (o['DATE CLOSED'] instanceof Date ? o['DATE CLOSED'].toISOString().split('T')[0] : String(o['DATE CLOSED']).split(' ')[0].split('T')[0]) : null;
+    if(d) byDay[d] = (byDay[d]||0) + (Number(o['ORDER TOTAL'])||0);
+  });
+  const sortedDays = Object.keys(byDay).sort().slice(-30);
+  const dailyLabels = sortedDays.map(d=>{const p=d.split('-');return p[2]+'/'+p[1]});
+  const dailyVals = sortedDays.map(d=>+(byDay[d]).toFixed(2));
+
+  // Products
+  const byProd = {};
+  approved.forEach(o => {
+    const n = (o['NAME']||'Produto').substring(0,40);
+    if(!byProd[n]) byProd[n]={fat:0,qty:0};
+    byProd[n].fat += Number(o['ORDER TOTAL'])||0;
+    byProd[n].qty += Number(o['QNT'])||0;
+  });
+  const topProds = Object.entries(byProd).sort((a,b)=>b[1].fat-a[1].fat).slice(0,8);
+
+  // States
+  const byState = {};
+  approved.forEach(o=>{const s=o['STATE']||'?';byState[s]=(byState[s]||0)+(Number(o['ORDER TOTAL'])||0)});
+  const topStates = Object.entries(byState).filter(([k])=>k&&k!='null').sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxState = topStates[0]?.[1]||1;
+
+  // Payment
+  const byPay = {};
+  approved.forEach(o=>{const p=o['PAYMENT TYPE']||'Outro';byPay[p]=(byPay[p]||0)+(Number(o['ORDER TOTAL'])||0)});
+  const payEntries = Object.entries(byPay).filter(([k])=>k&&k!='null').sort((a,b)=>b[1]-a[1]);
+  const totalPay = payEntries.reduce((s,p)=>s+p[1],0);
+  const payColors = ['#10d9c4','#4f8ef7','#f6ad55','#f56565','#9d8fff'];
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:11px;color:var(--muted)">📁 ${mlData.file} · Carregado em ${mlData.loaded}</div>
+      <button class="btn btn-ghost btn-sm" onclick="mlData=null;render()">✕ Limpar</button>
+    </div>
+    <div class="grid-4" style="margin-bottom:18px">
+      <div class="ml-kpi"><div class="ml-kpi-label">Faturamento</div><div class="ml-kpi-val">${fmtK(totalFat)}</div><div class="ml-kpi-sub">${totalOrders.toLocaleString('pt-BR')} pedidos aprovados</div></div>
+      <div class="ml-kpi"><div class="ml-kpi-label">Repasse líquido</div><div class="ml-kpi-val" style="color:var(--accent)">${fmtK(totalRep)}</div><div class="ml-kpi-sub">${totalFat>0?(totalRep/totalFat*100).toFixed(1)+'% do fat.':''}</div></div>
+      <div class="ml-kpi"><div class="ml-kpi-label">Ticket médio</div><div class="ml-kpi-val">${fmt(ticket)}</div><div class="ml-kpi-sub">por pedido aprovado</div></div>
+      <div class="ml-kpi"><div class="ml-kpi-label">Reputação</div><div class="ml-kpi-val" style="color:var(--accent);font-size:16px">5★ Verde</div><div class="ml-kpi-sub">Power Seller Silver</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:3fr 2fr;gap:13px;margin-bottom:13px">
+      <div class="panel">
+        <div class="panel-title">Faturamento diário <span class="panel-badge">últimos 30 dias</span></div>
+        <div class="chart-wrap" style="height:200px"><canvas id="ml-chart-daily" role="img" aria-label="Faturamento diário"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Formas de pagamento</div>
+        ${payEntries.map(([p,v],i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="display:flex;align-items:center;gap:7px;color:var(--muted)"><span style="width:7px;height:7px;border-radius:50%;background:${payColors[i]||'#888'};display:inline-block"></span>${p}</span><span style="font-family:'DM Mono','Courier New',monospace">${fmtK(v)}<span style="font-size:10px;color:var(--muted);margin-left:5px">${(v/totalPay*100).toFixed(1)}%</span></span></div>`).join('')}
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
+      <div class="panel">
+        <div class="panel-title">Top produtos <span class="panel-badge">por faturamento</span></div>
+        ${topProds.map(([n,d],i)=>{let c=0;topProds.slice(0,i+1).forEach(x=>c+=x[1].fat/topProds.reduce((s,y)=>s+y[1].fat,0));const curve=c<=.5?'A':c<=.8?'B':'C';return`<div class="prod-row"><span class="prod-num">${i+1}</span><span class="prod-name">${n}<span class="badge badge-${curve.toLowerCase()==='a'?'andamento':curve.toLowerCase()==='b'?'pendente':'concluido'}" style="margin-left:5px;font-size:9px">${curve}</span></span><span class="prod-val">${fmtK(d.fat)}</span></div>`}).join('')}
+      </div>
+      <div class="panel">
+        <div class="panel-title">Top estados</div>
+        ${topStates.map(([s,v])=>`<div class="bar-row"><span class="bar-label">${s}</span><div class="bar-track"><div class="bar-fill" style="width:${(v/maxState*100).toFixed(0)}%"></div></div><span class="bar-val">${fmtK(v)}</span></div>`).join('')}
+      </div>
+    </div>`;
+
+  setTimeout(()=>{
+    if(chartRefs.mlDaily) try{chartRefs.mlDaily.destroy()}catch(e){}
+    chartRefs.mlDaily = new Chart(document.getElementById('ml-chart-daily'),{
+      type:'bar',
+      data:{labels:dailyLabels,datasets:[{data:dailyVals,backgroundColor:'#10d9c4',borderRadius:3,borderSkipped:false}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>'R$ '+v.raw.toLocaleString('pt-BR',{minimumFractionDigits:2})}}},scales:{x:{ticks:{autoSkip:true,maxTicksLimit:10,maxRotation:0,font:{size:10},color:'#7a8fa6'},grid:{display:false}},y:{ticks:{callback:v=>'R$'+(v/1000).toFixed(0)+'K',font:{size:10},color:'#7a8fa6'},grid:{color:'rgba(255,255,255,.04)'}}}}
+    });
+  },50);
+}
+
+function openMLApiModal() {
+  const token = prompt('Cole o Access Token do ML (quando certificado):');
+  if(token) alert('Token salvo. Conexão ao vivo será ativada quando a API estiver certificada.');
+}
+
+// ─── IA ───────────────────────────────────────────────────────────────────────
+let chatHistory = [];
+function renderIA(el, acts) {
+  acts.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="chatHistory=[];renderIA(document.getElementById('content'),document.getElementById('topbar-actions'))">↺ Limpar chat</button>`;
+  const shortcuts = ['Alta prioridade','Contas urgentes','Progresso geral','Pendências DNC','Processos em aberto','Resumo completo'];
+  el.innerHTML = `
+    <div class="chat-wrap">
+      <div class="chat-shortcuts">${shortcuts.map(s=>`<button class="shortcut" onclick="sendShortcut('${s}')">${s}</button>`).join('')}</div>
+      <div class="chat-messages" id="chat-msgs">
+        ${chatHistory.length===0?`<div class="chat-msg ai"><div class="chat-avatar ai">IA</div><div class="chat-bubble">Olá André! Sou seu assistente DNC. Tenho acesso às suas tarefas, contas e processos em tempo real. Como posso ajudar?</div></div>`:''}
+        ${chatHistory.map(m=>`<div class="chat-msg ${m.role}"><div class="chat-avatar ${m.role}">${m.role==='ai'?'IA':'AG'}</div><div class="chat-bubble">${m.content.replace(/\n/g,'<br>')}</div></div>`).join('')}
+      </div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chat-input" rows="2" placeholder="Pergunte sobre suas tarefas, finanças ou processos..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+        <button class="chat-send" onclick="sendChat()">↑</button>
+      </div>
+    </div>`;
+  const msgs = document.getElementById('chat-msgs');
+  if(msgs) msgs.scrollTop = msgs.scrollHeight;
+}
+
+function getContext() {
+  const pending = tasks.filter(t=>t.status!=='Concluído');
+  const alta = tasks.filter(t=>t.prio==='Alta'&&t.status!=='Concluído');
+  const vencidas = contasVencidas();
+  const vencendo = contasVencendo(3);
+  const totalPend = contas.filter(c=>!c.pago).reduce((s,c)=>s+c.val,0);
+  return `CONTEXTO DNC DIGITAL STORE:
+Tarefas: ${tasks.length} total, ${pending.length} pendentes, ${alta.length} alta prioridade
+Financeiro: R$ ${totalPend.toFixed(2)} pendente, ${vencidas.length} vencidas, ${vencendo.length} vencendo em 3 dias
+Processos: ${procs.length} processos, ${procs.filter(p=>p.steps.every(s=>s.done)).length} completos
+Progresso geral: ${pctComplete()}% das tarefas concluídas
+${mlData?`MercadoX: planilha carregada com ${mlData.orders.length} pedidos`:'MercadoX: sem planilha carregada'}`;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input?.value.trim();
+  if(!msg) return;
+  input.value = '';
+  chatHistory.push({role:'user',content:msg});
+  renderIA(document.getElementById('content'),document.getElementById('topbar-actions'));
+  const msgs = document.getElementById('chat-msgs');
+  if(msgs) {
+    msgs.innerHTML += `<div class="chat-msg ai"><div class="chat-avatar ai">IA</div><div class="chat-bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:`Você é o assistente pessoal da DNC Digital Store de André Godoy. Responda sempre em português, de forma direta e prática. ${getContext()}`,
+        messages: chatHistory.filter(m=>m.role!=='ai').concat(chatHistory.filter(m=>m.role==='ai').map(m=>({...m,role:'assistant'}))).map(m=>({role:m.role==='ai'?'assistant':'user',content:m.content}))
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'Erro ao obter resposta.';
+    chatHistory.push({role:'ai',content:reply});
+  } catch(e) {
+    chatHistory.push({role:'ai',content:'Erro de conexão: '+e.message});
+  }
+  renderIA(document.getElementById('content'),document.getElementById('topbar-actions'));
+}
+
+function sendShortcut(s) {
+  const map = {
+    'Alta prioridade': 'Quais são minhas tarefas de alta prioridade pendentes?',
+    'Contas urgentes': 'Quais contas estão vencidas ou vencendo nos próximos 3 dias?',
+    'Progresso geral': 'Qual é o progresso geral das minhas tarefas e projetos?',
+    'Pendências DNC': 'Liste todas as pendências da DNC Digital Store',
+    'Processos em aberto': 'Quais processos ainda não foram concluídos?',
+    'Resumo completo': 'Me dê um resumo completo da situação atual da DNC: tarefas, financeiro e processos.'
+  };
+  const el = document.getElementById('chat-input');
+  if(el) el.value = map[s]||s;
+  sendChat();
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+load();
+</script>
+</body>
+</html>
